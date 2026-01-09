@@ -138,6 +138,15 @@ pipeline {
             exit 1
           fi
 
+          echo "⏳ DB health bekleniyor..."
+          # 5 saniyelik bekleme yerine 2 saniye ile daha hızlı feedback alıyoruz
+          for i in $(seq 1 60); do
+            STATUS=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$DB_CID" 2>/dev/null || true)
+            echo "DB health: $STATUS"
+            [ "$STATUS" = "healthy" ] && break
+            sleep 2
+          done
+
           # APP yoksa log bas ve fail (app crash olmuştur)
           if [ -z "$APP_CID" ]; then
             echo "❌ APP container bulunamadı (muhtemelen crash)."
@@ -149,7 +158,17 @@ pipeline {
             docker compose -p ${COMPOSE_PROJECT_NAME} -f docker-compose.app.yml logs db --tail=200 || true
             exit 1
           fi
-          echo "== 컨테이너 상태 =="
+
+          echo "⏳ APP health bekleniyor..."
+          # APP sağlığı için de bekleme süresi 2 saniyeye indirildi
+          for i in $(seq 1 60); do
+            AHS=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' "$APP_CID" 2>/dev/null || true)
+            echo "APP health: $AHS"
+            [ "$AHS" = "healthy" ] && break
+            sleep 2
+          done
+
+          echo "== HEALTHCHECK SON DURUM =="
           docker compose -p ${COMPOSE_PROJECT_NAME} -f docker-compose.app.yml ps || true
         '''
       }
