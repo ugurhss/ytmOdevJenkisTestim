@@ -8,8 +8,7 @@ use App\Services\Activity\ActivityLogService;
 use App\Services\Group\GroupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
-use Tests\TestCase; // ✅ PHPUnit değil!
-
+use Tests\TestCase;
 class GroupServiceTest extends TestCase
 {
     use RefreshDatabase;
@@ -20,7 +19,7 @@ class GroupServiceTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_create_calls_repository_and_logs_activity(): void
+    public function test_create_repository_cagrilir_ve_aktivite_loglanir(): void
     {
         $repo = Mockery::mock(GroupRepository::class);
         $activity = Mockery::mock(ActivityLogService::class);

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\Group\GroupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+//unit
 
 class GroupServiceTest extends TestCase
 {
@@ -21,7 +22,7 @@ class GroupServiceTest extends TestCase
     }
 
     /** @test */
-    public function it_creates_a_group()
+    public function grup_olusturulur()
     {
         $user = User::factory()->create();
 
@@ -44,7 +45,7 @@ class GroupServiceTest extends TestCase
     }
 
     /** @test */
-    public function it_gets_group_by_id()
+    public function id_ile_grup_getirilir()
     {
         $group = Group::factory()->create();
 
@@ -54,7 +55,7 @@ class GroupServiceTest extends TestCase
     }
 
     /** @test */
-    public function it_deletes_group()
+    public function grup_silinir()
     {
         $group = Group::factory()->create();
 

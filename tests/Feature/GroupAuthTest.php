@@ -6,6 +6,7 @@ use Tests\TestCase;
 
 class GroupAuthTest extends TestCase
 {
+    //girş yoksa logine
     public function test_guest_cannot_access_groups_index(): void
     {
         $this->get('/groups')->assertRedirect('/login');//ok
