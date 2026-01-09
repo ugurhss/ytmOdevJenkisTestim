@@ -17,7 +17,7 @@ pipeline {
 
   stages {
 
-    stage('Checkout') {
+    stage('Kaynak Kod Al') {
       steps {
         sh '''
           set -e
@@ -38,7 +38,7 @@ pipeline {
       }
     }
 
-    stage('Build CI Image') {
+    stage('CI Imaj Olustur') {
       steps {
         sh '''
           set -e
@@ -48,7 +48,7 @@ pipeline {
       }
     }
 
-    stage('Composer Install') {
+    stage('Composer Kurulum') {
       steps {
         sh '''
           set -e
@@ -62,7 +62,7 @@ pipeline {
       }
     }
 
-    stage('NPM Install & Build') {
+    stage('NPM Kurulum ve Build') {
       steps {
         sh '''
           set -e
@@ -76,11 +76,12 @@ pipeline {
       }
     }
 
-    stage('Unit Tests (JUnit)') {
+    stage('Birim Testleri (JUnit)') {
       steps {
         sh '''
           set -e
           echo "== Unit Tests =="
+          mkdir -p test-results
           docker run --rm \
             -v ${JENKINS_VOL}:/var/jenkins_home \
             -w ${WS} \
@@ -88,19 +89,18 @@ pipeline {
             sh -lc "
               cp -n .env.example .env || true
               php artisan key:generate --force || true
-              mkdir -p storage/test-results
-              php artisan test --testsuite=Unit --log-junit storage/test-results/junit-unit.xml
+              php artisan test --testsuite=Unit --log-junit ${WS}/test-results/junit-unit.xml
             "
         '''
       }
       post {
         always {
-          junit allowEmptyResults: true, testResults: 'storage/test-results/junit-unit.xml'
+          junit allowEmptyResults: true, testResults: 'test-results/junit-unit.xml'
         }
       }
     }
 
-    stage('Docker Up (App+DB)') {
+    stage('Docker Baslat') {
       steps {
         sh '''
           set -e
@@ -174,7 +174,7 @@ pipeline {
       }
     }
 
-    stage('DB Migrate (Controlled)') {
+    stage('Veritabani Migrasyon (Kontrollu)') {
       steps {
         sh '''
           set -e
@@ -204,7 +204,7 @@ pipeline {
       }
     }
 
-    stage('Integration Tests (Feature + JUnit)') {
+    stage('Entegrasyon Testleri (Feature + JUnit)') {
       steps {
         sh '''
           set -e
@@ -248,19 +248,19 @@ EOF
             php artisan config:clear
             php artisan migrate:fresh --force --env=testing
 
-            mkdir -p storage/test-results
-            php artisan test --testsuite=Feature --env=testing --log-junit storage/test-results/junit-feature.xml
+            mkdir -p /app/test-results
+            php artisan test --testsuite=Feature --env=testing --log-junit /app/test-results/junit-feature.xml
           "
         '''
       }
       post {
         always {
-          junit allowEmptyResults: true, testResults: 'storage/test-results/junit-feature.xml'
+          junit allowEmptyResults: true, testResults: 'test-results/junit-feature.xml'
         }
       }
     }
 
-    stage('E2E Scenarios (3 HTTP checks)') {
+    stage('E2E Senaryolari (3 HTTP Kontrolu)') {
       steps {
         sh '''
           set -e
