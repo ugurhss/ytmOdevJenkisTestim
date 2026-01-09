@@ -176,6 +176,23 @@ pipeline {
             exit 1
           fi
 
+          echo "== DB bağlantısı bekleniyor (PDO ping) =="
+          docker exec "$APP_CID" sh -lc 'php -r "
+            $tries=30;
+            while ($tries-- > 0) {
+              try {
+                new PDO(\"mysql:host=db;port=3306;dbname=laravel\", \"laravel\", \"secret\");
+                echo \"DB ready\\n\";
+                exit(0);
+              } catch (Throwable $e) {
+                echo \"DB not ready, retry...\\n\";
+                sleep(2);
+              }
+            }
+            echo \"DB still not ready\\n\";
+            exit(1);
+          "'
+
           echo "-> migrate:fresh"
           docker exec "$APP_CID" sh -lc "
             cd /app
