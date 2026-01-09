@@ -17,11 +17,11 @@ pipeline {
 
   stages {
 
-    stage('Kaynak Kodu Al') {
+    stage('Checkout') {
       steps {
         sh '''
           set -e
-          echo "== Kaynak Kod Kontrol =="
+          echo "== Checkout Debug =="
           pwd
           ls -la
 
@@ -38,21 +38,21 @@ pipeline {
       }
     }
 
-    stage('CI Imaj Olustur') {
+    stage('Build CI Image') {
       steps {
         sh '''
           set -e
-          echo "== CI Imaj Olustur =="
+          echo "== Build CI Image =="
           docker build -t ${CI_IMAGE} -f ci/Dockerfile.ci .
         '''
       }
     }
 
-    stage('Composer Kurulum') {
+    stage('Composer Install') {
       steps {
         sh '''
           set -e
-          echo "== Composer Kurulum =="
+          echo "== Composer Install =="
           docker run --rm \
             -v ${JENKINS_VOL}:/var/jenkins_home \
             -w ${WS} \
@@ -62,11 +62,11 @@ pipeline {
       }
     }
 
-    stage('NPM Kurulum ve Build') {
+    stage('NPM Install & Build') {
       steps {
         sh '''
           set -e
-          echo "== NPM Kurulum ve Build =="
+          echo "== NPM Install & Build =="
           docker run --rm \
             -v ${JENKINS_VOL}:/var/jenkins_home \
             -w ${WS} \
@@ -76,11 +76,11 @@ pipeline {
       }
     }
 
-    stage('Birim Testleri (JUnit)') {
+    stage('Unit Tests (JUnit)') {
       steps {
         sh '''
           set -e
-          echo "== Birim Testleri =="
+          echo "== Unit Tests =="
           docker run --rm \
             -v ${JENKINS_VOL}:/var/jenkins_home \
             -w ${WS} \
@@ -100,11 +100,11 @@ pipeline {
       }
     }
 
-    stage('Docker Baslat') {
+    stage('Docker Up (App+DB)') {
       steps {
         sh '''
           set -e
-          echo "== Docker Baslat =="
+          echo "== Docker Up (App+DB) =="
 
           cd ${WS}
           echo "PWD=$(pwd)"
@@ -174,11 +174,11 @@ pipeline {
       }
     }
 
-    stage('Veritabani Migrasyon (Kontrollu)') {
+    stage('DB Migrate (Controlled)') {
       steps {
         sh '''
           set -e
-          echo "== Veritabani Migrasyon (Kontrollu) =="
+          echo "== DB Migrate (Controlled) =="
 
           cd ${WS}
           # Compose çağrılarında aynı host path'ini tekrar export ediyoruz
@@ -204,11 +204,11 @@ pipeline {
       }
     }
 
-    stage('Entegrasyon Testleri (Feature + JUnit)') {
+    stage('Integration Tests (Feature + JUnit)') {
       steps {
         sh '''
           set -e
-          echo "== Entegrasyon Testleri (Feature) =="
+          echo "== Integration Tests (Feature) =="
 
           cd ${WS}
           # APP_SOURCE olmadan container içinde proje dosyaları bulunamıyor
@@ -260,11 +260,11 @@ EOF
       }
     }
 
-    stage('E2E Senaryolari (3 HTTP Kontrolu)') {
+    stage('E2E Scenarios (3 HTTP checks)') {
       steps {
         sh '''
           set -e
-          echo "== E2E Senaryolari (3 HTTP Kontrolu) =="
+          echo "== E2E Scenarios (3 HTTP checks) =="
 
           cd ${WS}
           # E2E öncesinde de aynı mount ayarı gerekli
