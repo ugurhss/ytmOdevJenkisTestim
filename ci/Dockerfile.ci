@@ -88,25 +88,26 @@ RUN ARCH=$(dpkg --print-architecture) \
         && chmod +x /usr/local/bin/chromedriver \
         && rm -rf /tmp/chromedriver*; \
     else \
-        echo "Installing ChromeDriver for $ARCH" \
-        && CHROMEDRIVER_VERSION=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE" 2>/dev/null | head -1 | tr -d '\n' || echo "131.0.6778.85") \
-        && echo "ChromeDriver version: $CHROMEDRIVER_VERSION" \
-        && if [ "$ARCH" = "arm64" ]; then \
-            wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux-arm64/chromedriver-linux-arm64.zip" || \
-            (echo "ARM64 ChromeDriver not found, trying alternative..." \
-            && CHROMEDRIVER_VERSION="131.0.6778.85" \
-            && wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux-arm64/chromedriver-linux-arm64.zip"); \
+        echo "Using system chromium-driver for $ARCH" \
+        && if [ -f /usr/bin/chromium-driver ]; then \
+            ln -s /usr/bin/chromium-driver /usr/local/bin/chromedriver \
+            && chmod +x /usr/local/bin/chromedriver \
+            && echo "ChromeDriver linked from chromium-driver"; \
         else \
-            wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip"; \
-        fi \
-        && unzip -q /tmp/chromedriver.zip -d /tmp/ \
-        && find /tmp -name chromedriver -type f -executable -exec mv {} /usr/local/bin/chromedriver \; \
-        && if [ ! -f /usr/local/bin/chromedriver ]; then \
-            echo "ChromeDriver not found in zip, trying chromium-driver..." \
-            && ln -s /usr/bin/chromium-driver /usr/local/bin/chromedriver 2>/dev/null || true; \
-        fi \
-        && chmod +x /usr/local/bin/chromedriver \
-        && rm -rf /tmp/chromedriver*; \
+            echo "chromium-driver not found, attempting to download ChromeDriver..." \
+            && CHROMEDRIVER_VERSION=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "131.0.6778.85") \
+            && echo "ChromeDriver version: $CHROMEDRIVER_VERSION" \
+            && if [ "$ARCH" = "arm64" ]; then \
+                wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux-arm64/chromedriver-linux-arm64.zip" 2>/dev/null || \
+                (echo "ARM64 ChromeDriver not available, using fallback" && exit 1); \
+            else \
+                wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip"; \
+            fi \
+            && unzip -q /tmp/chromedriver.zip -d /tmp/ \
+            && find /tmp -name chromedriver -type f -executable -exec mv {} /usr/local/bin/chromedriver \; \
+            && chmod +x /usr/local/bin/chromedriver \
+            && rm -rf /tmp/chromedriver*; \
+        fi; \
     fi
 
 # Composer
