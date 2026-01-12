@@ -51,26 +51,27 @@ RUN apt-get update && apt-get install -y \
     xvfb \
     && rm -rf /var/lib/apt/lists/*
 
-# Google Chrome kurulumu
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
+# Google Chrome kurulumu (modern yöntem - apt-key deprecated)
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
     && apt-get update \
     && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
 # ChromeDriver kurulumu (Chrome for Testing ile uyumlu)
-RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+' | head -1 | cut -d. -f1) \
-    && CHROMEDRIVER_VERSION=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}" || echo "latest") \
+RUN CHROME_VERSION=$(google-chrome --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1) \
+    && if [ -z "$CHROME_VERSION" ]; then CHROME_VERSION=131; fi \
+    && echo "Chrome major version: $CHROME_VERSION" \
+    && CHROMEDRIVER_VERSION=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}" 2>/dev/null || echo "") \
+    && if [ -z "$CHROMEDRIVER_VERSION" ]; then \
+        CHROMEDRIVER_VERSION=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE" 2>/dev/null | head -1 | tr -d '\n' || echo "131.0.6778.85"); \
+    fi \
+    && echo "ChromeDriver version: $CHROMEDRIVER_VERSION" \
     && wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip" \
-    && unzip -j /tmp/chromedriver.zip -d /usr/local/bin/ "chromedriver-linux64/chromedriver" \
+    && unzip -q /tmp/chromedriver.zip -d /tmp/ \
+    && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
     && chmod +x /usr/local/bin/chromedriver \
-    && rm /tmp/chromedriver.zip || \
-    (echo "ChromeDriver fallback: Using alternative method" && \
-     CHROMEDRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION} || echo "114.0.5735.90") \
-     && wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" \
-     && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
-     && chmod +x /usr/local/bin/chromedriver \
-     && rm /tmp/chromedriver.zip)
+    && rm -rf /tmp/chromedriver*
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
