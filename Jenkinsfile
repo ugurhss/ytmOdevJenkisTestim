@@ -336,7 +336,7 @@ CHECK_URLS="http://127.0.0.1:8000 http://127.0.0.1:8000/login http://127.0.0.1:8
           # ChromeDriver'ın başlamasını bekle
           echo "-> ChromeDriver başlaması bekleniyor..."
           sleep 5
-          
+
           # ChromeDriver'ın çalıştığını kontrol et
           docker exec "$APP_CID" sh -lc "curl -s http://localhost:9515/status > /dev/null && echo 'ChromeDriver çalışıyor' || echo 'ChromeDriver başlatılamadı'"
 
