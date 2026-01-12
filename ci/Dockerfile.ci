@@ -1,13 +1,76 @@
 FROM php:8.3-cli
 
-# Sistem bağımlılıkları + PHP ext’leri
+# Sistem bağımlılıkları + PHP ext'leri
 RUN apt-get update && apt-get install -y \
     git unzip libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
     libonig-dev libxml2-dev \
+    curl gnupg wget \
     && docker-php-ext-install zip pdo pdo_mysql \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd \
     && rm -rf /var/lib/apt/lists/*
+
+# Chrome ve ChromeDriver için bağımlılıklar
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    fonts-liberation \
+    libappindicator3-1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libc6 \
+    libcairo2 \
+    libcups2 \
+    libdbus-1-3 \
+    libexpat1 \
+    libfontconfig1 \
+    libgbm1 \
+    libgcc1 \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libstdc++6 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libxss1 \
+    libxtst6 \
+    lsb-release \
+    xdg-utils \
+    xvfb \
+    && rm -rf /var/lib/apt/lists/*
+
+# Google Chrome kurulumu
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable \
+    && rm -rf /var/lib/apt/lists/*
+
+# ChromeDriver kurulumu (Chrome for Testing ile uyumlu)
+RUN CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+\.\d+' | head -1 | cut -d. -f1) \
+    && CHROMEDRIVER_VERSION=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}" || echo "latest") \
+    && wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip" \
+    && unzip -j /tmp/chromedriver.zip -d /usr/local/bin/ "chromedriver-linux64/chromedriver" \
+    && chmod +x /usr/local/bin/chromedriver \
+    && rm /tmp/chromedriver.zip || \
+    (echo "ChromeDriver fallback: Using alternative method" && \
+     CHROMEDRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION} || echo "114.0.5735.90") \
+     && wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" \
+     && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
+     && chmod +x /usr/local/bin/chromedriver \
+     && rm /tmp/chromedriver.zip)
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

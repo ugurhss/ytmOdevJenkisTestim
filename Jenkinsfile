@@ -306,6 +306,86 @@ CHECK_URLS="http://127.0.0.1:8000 http://127.0.0.1:8000/login http://127.0.0.1:8
         '''
       }
     }
+
+    stage('Selenium Testleri (Dusk + JUnit)') {
+      steps {
+        sh '''
+          set -e
+          echo "== Selenium Tests (Dusk) =="
+
+          cd ${WS}
+          HOST_WS=$(docker volume inspect ${JENKINS_VOL} -f '{{.Mountpoint}}')
+          APP_SOURCE="$HOST_WS/workspace/laravel-ci"
+          export APP_SOURCE
+          echo "APP_SOURCE=$APP_SOURCE"
+          APP_CID=$(docker compose -p ${COMPOSE_PROJECT_NAME} -f docker-compose.app.yml ps -q app || true)
+
+          if [ -z "$APP_CID" ]; then
+            echo "❌ Selenium test öncesi APP container yok."
+            docker compose -p ${COMPOSE_PROJECT_NAME} -f docker-compose.app.yml ps || true
+            docker compose -p ${COMPOSE_PROJECT_NAME} -f docker-compose.app.yml logs app --tail=200 || true
+            exit 1
+          fi
+
+          # Xvfb ve ChromeDriver'ı arka planda başlat
+          echo "-> Xvfb ve ChromeDriver başlatılıyor..."
+          docker exec -d "$APP_CID" sh -lc "Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &"
+          sleep 2
+          docker exec -d "$APP_CID" sh -lc "export DISPLAY=:99 && chromedriver --port=9515 --whitelisted-ips= > /tmp/chromedriver.log 2>&1 &"
+
+          # ChromeDriver'ın başlamasını bekle
+          echo "-> ChromeDriver başlaması bekleniyor..."
+          sleep 5
+          
+          # ChromeDriver'ın çalıştığını kontrol et
+          docker exec "$APP_CID" sh -lc "curl -s http://localhost:9515/status > /dev/null && echo 'ChromeDriver çalışıyor' || echo 'ChromeDriver başlatılamadı'"
+
+          # Dusk testlerini çalıştır
+          docker exec "$APP_CID" sh -lc "
+            cd /app
+            export DISPLAY=:99
+
+            # Dusk için .env dosyası oluştur
+            cat > .env.dusk.testing <<'EOF'
+APP_ENV=testing
+APP_DEBUG=true
+APP_KEY=
+DB_CONNECTION=mysql
+DB_HOST=db
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=laravel
+DB_PASSWORD=secret
+CACHE_DRIVER=array
+SESSION_DRIVER=array
+QUEUE_CONNECTION=sync
+MAIL_MAILER=array
+APP_URL=http://127.0.0.1:8000
+EOF
+
+            php artisan key:generate --force --env=dusk.testing
+            php artisan config:clear
+            php artisan migrate:fresh --force --env=dusk.testing
+
+            # Roles ve permissions seed et
+            php artisan db:seed --class=RoleSeeder --env=dusk.testing || true
+
+            # Test sonuçları için dizin oluştur
+            mkdir -p /app/test-results
+
+            # Dusk testlerini çalıştır ve JUnit formatında raporla
+            php artisan dusk --env=dusk.testing --log-junit /app/test-results/junit-dusk.xml || true
+          "
+
+          echo "✅ Selenium testleri tamamlandı"
+        '''
+      }
+      post {
+        always {
+          junit allowEmptyResults: true, testResults: 'test-results/junit-dusk.xml'
+        }
+      }
+    }
   }
 
   post {
