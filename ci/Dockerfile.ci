@@ -89,24 +89,28 @@ RUN ARCH=$(dpkg --print-architecture) \
         && rm -rf /tmp/chromedriver*; \
     else \
         echo "Using system chromium-driver for $ARCH" \
-        && if [ -f /usr/bin/chromium-driver ]; then \
-            ln -s /usr/bin/chromium-driver /usr/local/bin/chromedriver \
+        && CHROMEDRIVER_PATH="" \
+        && for path in /usr/bin/chromedriver /usr/lib/chromium/chromedriver /usr/bin/chromium-driver /usr/lib/chromium-browser/chromedriver; do \
+            if [ -f "$path" ]; then \
+                CHROMEDRIVER_PATH="$path" \
+                break; \
+            fi; \
+        done \
+        && if [ -n "$CHROMEDRIVER_PATH" ]; then \
+            ln -s "$CHROMEDRIVER_PATH" /usr/local/bin/chromedriver \
             && chmod +x /usr/local/bin/chromedriver \
-            && echo "ChromeDriver linked from chromium-driver"; \
+            && echo "ChromeDriver linked from $CHROMEDRIVER_PATH"; \
         else \
-            echo "chromium-driver not found, attempting to download ChromeDriver..." \
-            && CHROMEDRIVER_VERSION=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "131.0.6778.85") \
-            && echo "ChromeDriver version: $CHROMEDRIVER_VERSION" \
-            && if [ "$ARCH" = "arm64" ]; then \
-                wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux-arm64/chromedriver-linux-arm64.zip" 2>/dev/null || \
-                (echo "ARM64 ChromeDriver not available, using fallback" && exit 1); \
+            echo "chromium-driver not found in standard locations, searching..." \
+            && CHROMEDRIVER_PATH=$(find /usr -name chromedriver -type f -executable 2>/dev/null | head -1) \
+            && if [ -n "$CHROMEDRIVER_PATH" ]; then \
+                ln -s "$CHROMEDRIVER_PATH" /usr/local/bin/chromedriver \
+                && chmod +x /usr/local/bin/chromedriver \
+                && echo "ChromeDriver linked from $CHROMEDRIVER_PATH"; \
             else \
-                wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip"; \
-            fi \
-            && unzip -q /tmp/chromedriver.zip -d /tmp/ \
-            && find /tmp -name chromedriver -type f -executable -exec mv {} /usr/local/bin/chromedriver \; \
-            && chmod +x /usr/local/bin/chromedriver \
-            && rm -rf /tmp/chromedriver*; \
+                echo "ERROR: chromium-driver not found anywhere. Chromium package may not have installed driver correctly." \
+                && exit 1; \
+            fi; \
         fi; \
     fi
 
