@@ -13,17 +13,17 @@ class GroupsTest extends DuskTestCase
     use DatabaseMigrations;
 
     /**
-     * Test groups page is accessible.
+     * Test: Gruplar sayfası erişilebilir.
      */
-    public function test_groups_page_is_accessible(): void
+    public function test_gruplar_sayfasi_erisilebilir(): void
     {
-        $user = User::factory()->create([
+        $kullanici = User::factory()->create([
             'email' => 'test@example.com',
             'password' => bcrypt('password'),
         ]);
 
-        $this->browse(function (Browser $browser) use ($user) {
-            $browser->loginAs($user)
+        $this->browse(function (Browser $tarayici) use ($kullanici) {
+            $tarayici->loginAs($kullanici)
                     ->visit('/groups')
                     ->assertPathIs('/groups')
                     ->pause(1000);
@@ -31,21 +31,21 @@ class GroupsTest extends DuskTestCase
     }
 
     /**
-     * Test groups page shows groups list.
+     * Test: Gruplar sayfası grup listesini gösterir.
      */
-    public function test_groups_page_shows_groups(): void
+    public function test_gruplar_sayfasi_grup_listesini_gosterir(): void
     {
-        $user = User::factory()->create([
+        $kullanici = User::factory()->create([
             'email' => 'test@example.com',
             'password' => bcrypt('password'),
         ]);
 
-        $group = Group::factory()->create([
-            'name' => 'Test Group',
+        $grup = Group::factory()->create([
+            'name' => 'Test Grubu',
         ]);
 
-        $this->browse(function (Browser $browser) use ($user, $group) {
-            $browser->loginAs($user)
+        $this->browse(function (Browser $tarayici) use ($kullanici, $grup) {
+            $tarayici->loginAs($kullanici)
                     ->visit('/groups')
                     ->assertPathIs('/groups')
                     ->pause(2000);
@@ -53,12 +53,12 @@ class GroupsTest extends DuskTestCase
     }
 
     /**
-     * Test groups page requires authentication.
+     * Test: Gruplar sayfası kimlik doğrulama gerektirir.
      */
-    public function test_groups_page_requires_authentication(): void
+    public function test_gruplar_sayfasi_kimlik_dogrulama_gerektirir(): void
     {
-        $this->browse(function (Browser $browser) {
-            $browser->visit('/groups')
+        $this->browse(function (Browser $tarayici) {
+            $tarayici->visit('/groups')
                     ->assertPathIs('/login');
         });
     }

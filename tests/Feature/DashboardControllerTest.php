@@ -30,20 +30,20 @@ class DashboardControllerTest extends TestCase
     /** @test */
     public function superadmin_dashboard_gorebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('superadmin');
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('superadmin');
 
         $admin = User::factory()->create();
         $admin->assignRole('admin');
 
-        $student = User::factory()->create();
-        $student->assignRole('student');
+        $ogrenci = User::factory()->create();
+        $ogrenci->assignRole('student');
 
-        $response = $this->actingAs($user)
+        $yanit = $this->actingAs($kullanici)
             ->get(route('dashboard'));
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $yanit->assertOk();
+        $yanit->assertInertia(fn ($sayfa) => $sayfa
             ->component('SuperAdmin/Dashboard')
             ->has('stats')
             ->has('groups')
@@ -54,15 +54,15 @@ class DashboardControllerTest extends TestCase
     /** @test */
     public function admin_dashboard_gorebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
 
-        $response = $this->actingAs($user)
+        $yanit = $this->actingAs($kullanici)
             ->get(route('dashboard'));
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $yanit->assertOk();
+        $yanit->assertInertia(fn ($sayfa) => $sayfa
             ->component('Admin/Dashboard')
             ->has('stats')
             ->has('groups')
@@ -72,16 +72,16 @@ class DashboardControllerTest extends TestCase
     /** @test */
     public function ogrenci_dashboard_gorebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('student');
-        $group = Group::factory()->create();
-        $group->students()->attach($user->id);
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('student');
+        $grup = Group::factory()->create();
+        $grup->students()->attach($kullanici->id);
 
-        $response = $this->actingAs($user)
+        $yanit = $this->actingAs($kullanici)
             ->get(route('dashboard'));
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $yanit->assertOk();
+        $yanit->assertInertia(fn ($sayfa) => $sayfa
             ->component('User/Dashboard')
             ->has('user')
             ->has('groups')
@@ -91,17 +91,17 @@ class DashboardControllerTest extends TestCase
     /** @test */
     public function superadmin_dashboard_istatistikleri_gosterir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('superadmin');
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('superadmin');
 
-        User::factory()->count(3)->create()->each(fn ($u) => $u->assignRole('admin'));
-        User::factory()->count(5)->create()->each(fn ($u) => $u->assignRole('student'));
+        User::factory()->count(3)->create()->each(fn ($k) => $k->assignRole('admin'));
+        User::factory()->count(5)->create()->each(fn ($k) => $k->assignRole('student'));
 
-        $response = $this->actingAs($user)
+        $yanit = $this->actingAs($kullanici)
             ->get(route('dashboard'));
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $yanit->assertOk();
+        $yanit->assertInertia(fn ($sayfa) => $sayfa
             ->where('stats.total_users', 9) // 1 superadmin + 3 admin + 5 student
             ->where('stats.total_admins', 3)
             ->where('stats.total_students', 5)
@@ -114,19 +114,19 @@ class DashboardControllerTest extends TestCase
         $admin = User::factory()->create();
         $admin->assignRole('admin');
 
-        $otherAdmin = User::factory()->create();
-        $otherAdmin->assignRole('admin');
+        $digerAdmin = User::factory()->create();
+        $digerAdmin->assignRole('admin');
 
-        $ownGroup = Group::factory()->create(['user_id' => $admin->id]);
-        $otherGroup = Group::factory()->create(['user_id' => $otherAdmin->id]);
+        $kendiGrubu = Group::factory()->create(['user_id' => $admin->id]);
+        $digerGrup = Group::factory()->create(['user_id' => $digerAdmin->id]);
 
-        $response = $this->actingAs($admin)
+        $yanit = $this->actingAs($admin)
             ->get(route('dashboard'));
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $yanit->assertOk();
+        $yanit->assertInertia(fn ($sayfa) => $sayfa
             ->has('groups', 1)
-            ->where('groups.0.id', $ownGroup->id)
+            ->where('groups.0.id', $kendiGrubu->id)
         );
     }
 }

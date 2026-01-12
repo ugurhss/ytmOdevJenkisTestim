@@ -3,39 +3,39 @@
 use App\Models\User;
 
 test('giriş ekranı görüntülenebilir', function () {
-    $response = $this->get('/login');
+    $yanit = $this->get('/login');
 
-    $response->assertStatus(200);
+    $yanit->assertStatus(200);
 });
 
 test('kullanıcılar giriş ekranı üzerinden giriş yapabilir', function () {
-    $user = User::factory()->create();
+    $kullanici = User::factory()->create();
 
-    $response = $this->post('/login', [
-        'email' => $user->email,
+    $yanit = $this->post('/login', [
+        'email' => $kullanici->email,
         'password' => 'password',
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $yanit->assertRedirect(route('dashboard', absolute: false));
 });
 
 test('kullanıcılar hatalı şifre ile giriş yapamaz', function () {
-    $user = User::factory()->create();
+    $kullanici = User::factory()->create();
 
     $this->post('/login', [
-        'email' => $user->email,
-        'password' => 'wrong-password',
+        'email' => $kullanici->email,
+        'password' => 'yanlis-sifre',
     ]);
 
     $this->assertGuest();
 });
 
 test('kullanıcılar çıkış yapabilir', function () {
-    $user = User::factory()->create();
+    $kullanici = User::factory()->create();
 
-    $response = $this->actingAs($user)->post('/logout');
+    $yanit = $this->actingAs($kullanici)->post('/logout');
 
     $this->assertGuest();
-    $response->assertRedirect('/');
+    $yanit->assertRedirect('/');
 });

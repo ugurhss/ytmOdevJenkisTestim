@@ -24,13 +24,16 @@ class GroupUpdateTest extends TestCase
         Gate::before(fn () => true);
     }
 
-    public function test_user_can_update_group_name(): void
+    /**
+     * Test: Kullanıcı grup adını güncelleyebilir.
+     */
+    public function test_kullanici_grup_adini_guncelleyebilir(): void
     {
-        $user = User::factory()->create();
+        $kullanici = User::factory()->create();
 
-        // group create için zorunlu FK’ları hazırlıyoruz
-        $group = Group::factory()->create([
-            'user_id'         => $user->id,
+        // group create için zorunlu FK'ları hazırlıyoruz
+        $grup = Group::factory()->create([
+            'user_id'         => $kullanici->id,
             'city_id'         => City::factory()->create()->id,
             'university_id'   => University::factory()->create()->id,
             'faculty_id'      => Faculty::factory()->create()->id,
@@ -39,14 +42,14 @@ class GroupUpdateTest extends TestCase
             'groups_name'     => 'Eski Ad',
         ]);
 
-        $response = $this->actingAs($user)->put("/groups/{$group->id}", [
+        $yanit = $this->actingAs($kullanici)->put("/groups/{$grup->id}", [
             'groups_name' => 'Yeni Ad',
         ]);
 
-        $response->assertStatus(302);
+        $yanit->assertStatus(302);
 
         $this->assertDatabaseHas('groups', [
-            'id' => $group->id,
+            'id' => $grup->id,
             'groups_name' => 'Yeni Ad',
         ]);
     }

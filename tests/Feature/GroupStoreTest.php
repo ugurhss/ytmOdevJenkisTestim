@@ -25,34 +25,37 @@ class GroupStoreTest extends TestCase
         Gate::before(fn () => true);
     }
 
-    public function test_authenticated_user_can_create_group_with_valid_foreign_keys(): void
+    /**
+     * Test: Giriş yapmış kullanıcı geçerli foreign key'lerle grup oluşturabilir.
+     */
+    public function test_giris_yapmis_kullanici_gecerli_foreign_keylerle_grup_olusturabilir(): void
     {
-        $user = User::factory()->create();
+        $kullanici = User::factory()->create();
 
         // ✅ exists kuralları için ilgili tabloları dolduruyoruz
-        $city       = City::factory()->create();
-        $university = University::factory()->create();
-        $faculty    = Faculty::factory()->create();
-        $department = Department::factory()->create();
-        $classModel = ClassModel::factory()->create();
+        $sehir       = City::factory()->create();
+        $universite = University::factory()->create();
+        $fakulte    = Faculty::factory()->create();
+        $bolum = Department::factory()->create();
+        $sinif = ClassModel::factory()->create();
 
-        $payload = [
+        $veri = [
             'groups_name'     => 'CI Test Grup',
-            'city_id'         => $city->id,
-            'university_id'   => $university->id,
-            'faculty_id'      => $faculty->id,
-            'department_id'   => $department->id,
-            'class_models_id' => $classModel->id,
+            'city_id'         => $sehir->id,
+            'university_id'   => $universite->id,
+            'faculty_id'      => $fakulte->id,
+            'department_id'   => $bolum->id,
+            'class_models_id' => $sinif->id,
         ];
 
-        $response = $this->actingAs($user)->post('/groups', $payload);
+        $yanit = $this->actingAs($kullanici)->post('/groups', $veri);
 
-        $response->assertStatus(302);
+        $yanit->assertStatus(302);
 
         $this->assertDatabaseHas('groups', [
             'groups_name' => 'CI Test Grup',
-            'user_id'     => $user->id,
-            'city_id'     => $city->id,
+            'user_id'     => $kullanici->id,
+            'city_id'     => $sehir->id,
         ]);
     }
 }

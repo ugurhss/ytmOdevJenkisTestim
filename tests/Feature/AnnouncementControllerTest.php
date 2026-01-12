@@ -31,10 +31,10 @@ class AnnouncementControllerTest extends TestCase
     /** @test */
     public function giris_yapan_kullanici_duyuru_listesini_gorebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
 
-        $this->actingAs($user)
+        $this->actingAs($kullanici)
             ->get(route('announcements.index'))
             ->assertOk();
     }
@@ -42,11 +42,11 @@ class AnnouncementControllerTest extends TestCase
     /** @test */
     public function duyuru_olusturma_sayfasi_gosterilebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
 
-        $this->actingAs($user)
+        $this->actingAs($kullanici)
             ->get(route('announcements.create'))
             ->assertOk();
     }
@@ -54,101 +54,101 @@ class AnnouncementControllerTest extends TestCase
     /** @test */
     public function duyuru_olusturulabilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
 
-        $response = $this->actingAs($user)
+        $yanit = $this->actingAs($kullanici)
             ->post(route('announcements.store'), [
-                'group_id' => $group->id,
+                'group_id' => $grup->id,
                 'title' => 'Test Duyurusu',
                 'content' => 'Test içerik',
             ]);
 
-        $response->assertRedirect(route('announcements.index'));
-        $response->assertSessionHas('success');
+        $yanit->assertRedirect(route('announcements.index'));
+        $yanit->assertSessionHas('success');
 
         $this->assertDatabaseHas('group_announcements', [
             'title' => 'Test Duyurusu',
-            'group_id' => $group->id,
-            'user_id' => $user->id,
+            'group_id' => $grup->id,
+            'user_id' => $kullanici->id,
         ]);
     }
 
     /** @test */
     public function duyuru_basligi_zorunludur(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
 
-        $response = $this->actingAs($user)
+        $yanit = $this->actingAs($kullanici)
             ->post(route('announcements.store'), [
-                'group_id' => $group->id,
+                'group_id' => $grup->id,
                 'title' => '',
                 'content' => 'Test içerik',
             ]);
 
-        $response->assertSessionHasErrors('title');
+        $yanit->assertSessionHasErrors('title');
     }
 
     /** @test */
     public function duyuru_icerigi_zorunludur(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
 
-        $response = $this->actingAs($user)
+        $yanit = $this->actingAs($kullanici)
             ->post(route('announcements.store'), [
-                'group_id' => $group->id,
+                'group_id' => $grup->id,
                 'title' => 'Test Başlık',
                 'content' => '',
             ]);
 
-        $response->assertSessionHasErrors('content');
+        $yanit->assertSessionHasErrors('content');
     }
 
     /** @test */
     public function duyuru_detay_sayfasi_gosterilebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
-        $announcement = GroupAnnouncement::factory()->create([
-            'group_id' => $group->id,
-            'user_id' => $user->id,
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
+        $duyuru = GroupAnnouncement::factory()->create([
+            'group_id' => $grup->id,
+            'user_id' => $kullanici->id,
         ]);
 
-        $this->actingAs($user)
-            ->get(route('announcements.show', $announcement->id))
+        $this->actingAs($kullanici)
+            ->get(route('announcements.show', $duyuru->id))
             ->assertOk();
     }
 
     /** @test */
     public function duyuru_guncellenebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
-        $announcement = GroupAnnouncement::factory()->create([
-            'group_id' => $group->id,
-            'user_id' => $user->id,
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
+        $duyuru = GroupAnnouncement::factory()->create([
+            'group_id' => $grup->id,
+            'user_id' => $kullanici->id,
             'title' => 'Eski Başlık',
         ]);
 
-        $response = $this->actingAs($user)
-            ->put(route('announcements.update', $announcement->id), [
-                'group_id' => $group->id,
+        $yanit = $this->actingAs($kullanici)
+            ->put(route('announcements.update', $duyuru->id), [
+                'group_id' => $grup->id,
                 'title' => 'Yeni Başlık',
                 'content' => 'Yeni içerik',
             ]);
 
-        $response->assertRedirect(route('announcements.index'));
-        $response->assertSessionHas('success');
+        $yanit->assertRedirect(route('announcements.index'));
+        $yanit->assertSessionHas('success');
 
         $this->assertDatabaseHas('group_announcements', [
-            'id' => $announcement->id,
+            'id' => $duyuru->id,
             'title' => 'Yeni Başlık',
         ]);
     }
@@ -156,45 +156,45 @@ class AnnouncementControllerTest extends TestCase
     /** @test */
     public function duyuru_silinebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
-        $announcement = GroupAnnouncement::factory()->create([
-            'group_id' => $group->id,
-            'user_id' => $user->id,
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
+        $duyuru = GroupAnnouncement::factory()->create([
+            'group_id' => $grup->id,
+            'user_id' => $kullanici->id,
         ]);
 
-        $response = $this->actingAs($user)
-            ->delete(route('announcements.destroy', $announcement->id));
+        $yanit = $this->actingAs($kullanici)
+            ->delete(route('announcements.destroy', $duyuru->id));
 
-        $response->assertRedirect(route('announcements.index'));
-        $response->assertSessionHas('success');
+        $yanit->assertRedirect(route('announcements.index'));
+        $yanit->assertSessionHas('success');
 
         $this->assertDatabaseMissing('group_announcements', [
-            'id' => $announcement->id,
+            'id' => $duyuru->id,
         ]);
     }
 
     /** @test */
     public function baska_kullanicinin_duyurusu_silinebilir_sadece_yetkisi_varsa(): void
     {
-        $owner = User::factory()->create();
-        $owner->assignRole('admin');
-        $otherUser = User::factory()->create();
-        $otherUser->assignRole('admin');
+        $sahip = User::factory()->create();
+        $sahip->assignRole('admin');
+        $digerKullanici = User::factory()->create();
+        $digerKullanici->assignRole('admin');
 
-        $group = Group::factory()->create(['user_id' => $owner->id]);
-        $announcement = GroupAnnouncement::factory()->create([
-            'group_id' => $group->id,
-            'user_id' => $owner->id,
+        $grup = Group::factory()->create(['user_id' => $sahip->id]);
+        $duyuru = GroupAnnouncement::factory()->create([
+            'group_id' => $grup->id,
+            'user_id' => $sahip->id,
         ]);
 
-        $response = $this->actingAs($otherUser)
-            ->delete(route('announcements.destroy', $announcement->id));
+        $yanit = $this->actingAs($digerKullanici)
+            ->delete(route('announcements.destroy', $duyuru->id));
 
         // Yetki kontrolü policy'de yapılıyor, bu test için beklenen davranışı kontrol et
         $this->assertDatabaseHas('group_announcements', [
-            'id' => $announcement->id,
+            'id' => $duyuru->id,
         ]);
     }
 }

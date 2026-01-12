@@ -11,13 +11,14 @@ class LoginTest extends DuskTestCase
 {
     use DatabaseMigrations;
 
+
     /**
-     * Test login page loads correctly.
+     * Test: Giriş sayfası yüklenir.
      */
-    public function test_login_page_loads(): void
+    public function test_giris_sayfasi_yuklenir(): void
     {
-        $this->browse(function (Browser $browser) {
-            $browser->visit('/login')
+        $this->browse(function (Browser $tarayici) {
+            $tarayici->visit('/login')
                     ->assertSee('Log in')
                     ->assertPresent('input[name="email"]')
                     ->assertPresent('input[name="password"]');
@@ -25,18 +26,18 @@ class LoginTest extends DuskTestCase
     }
 
     /**
-     * Test successful login.
+     * Test: Kullanıcı giriş yapabilir.
      */
-    public function test_user_can_login(): void
+    public function test_kullanici_giris_yapabilir(): void
     {
-        $user = User::factory()->create([
+        $kullanici = User::factory()->create([
             'email' => 'test@example.com',
             'password' => bcrypt('password'),
         ]);
 
-        $this->browse(function (Browser $browser) use ($user) {
-            $browser->visit('/login')
-                    ->type('email', $user->email)
+        $this->browse(function (Browser $tarayici) use ($kullanici) {
+            $tarayici->visit('/login')
+                    ->type('email', $kullanici->email)
                     ->type('password', 'password')
                     ->press('Log in')
                     ->waitForLocation('/dashboard', 5)
@@ -45,14 +46,14 @@ class LoginTest extends DuskTestCase
     }
 
     /**
-     * Test login with invalid credentials.
+     * Test: Kullanıcı geçersiz kimlik bilgileriyle giriş yapamaz.
      */
-    public function test_user_cannot_login_with_invalid_credentials(): void
+    public function test_kullanici_gecersiz_kimlik_bilgileriyle_giris_yapamaz(): void
     {
-        $this->browse(function (Browser $browser) {
-            $browser->visit('/login')
-                    ->type('email', 'wrong@example.com')
-                    ->type('password', 'wrongpassword')
+        $this->browse(function (Browser $tarayici) {
+            $tarayici->visit('/login')
+                    ->type('email', 'yanlis@example.com')
+                    ->type('password', 'yanlis-sifre')
                     ->press('Log in')
                     ->pause(1000)
                     ->assertPathIs('/login')

@@ -21,11 +21,11 @@ class GroupControllerTest extends TestCase
     /** @test */
     public function grup_listesi_gosterilebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
 
-        $this->actingAs($user)
+        $this->actingAs($kullanici)
             ->get(route('groups.index'))
             ->assertOk();
     }
@@ -33,22 +33,22 @@ class GroupControllerTest extends TestCase
     /** @test */
     public function grup_detay_sayfasi_gosterilebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
 
-        $this->actingAs($user)
-            ->get(route('groups.show', $group->id))
+        $this->actingAs($kullanici)
+            ->get(route('groups.show', $grup->id))
             ->assertOk();
     }
 
     /** @test */
     public function grup_olusturma_sayfasi_gosterilebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
 
-        $this->actingAs($user)
+        $this->actingAs($kullanici)
             ->get(route('groups.create'))
             ->assertOk();
     }
@@ -56,38 +56,38 @@ class GroupControllerTest extends TestCase
     /** @test */
     public function grup_guncelleme_sayfasi_gosterilebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
 
-        $this->actingAs($user)
-            ->get(route('groups.edit', $group->id))
+        $this->actingAs($kullanici)
+            ->get(route('groups.edit', $grup->id))
             ->assertOk();
     }
 
     /** @test */
     public function grup_guncellenebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create([
-            'user_id' => $user->id,
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create([
+            'user_id' => $kullanici->id,
             'groups_name' => 'Eski Grup Adı',
         ]);
 
-        $response = $this->actingAs($user)
-            ->put(route('groups.update', $group->id), [
+        $yanit = $this->actingAs($kullanici)
+            ->put(route('groups.update', $grup->id), [
                 'groups_name' => 'Yeni Grup Adı',
-                'city_id' => $group->city_id,
-                'university_id' => $group->university_id,
-                'faculty_id' => $group->faculty_id,
-                'department_id' => $group->department_id,
-                'class_models_id' => $group->class_models_id,
+                'city_id' => $grup->city_id,
+                'university_id' => $grup->university_id,
+                'faculty_id' => $grup->faculty_id,
+                'department_id' => $grup->department_id,
+                'class_models_id' => $grup->class_models_id,
             ]);
 
-        $response->assertRedirect();
+        $yanit->assertRedirect();
         $this->assertDatabaseHas('groups', [
-            'id' => $group->id,
+            'id' => $grup->id,
             'groups_name' => 'Yeni Grup Adı',
         ]);
     }
@@ -95,55 +95,55 @@ class GroupControllerTest extends TestCase
     /** @test */
     public function grup_silinebilir(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
 
-        $response = $this->actingAs($user)
-            ->delete(route('groups.destroy', $group->id));
+        $yanit = $this->actingAs($kullanici)
+            ->delete(route('groups.destroy', $grup->id));
 
-        $response->assertRedirect();
+        $yanit->assertRedirect();
         $this->assertDatabaseMissing('groups', [
-            'id' => $group->id,
+            'id' => $grup->id,
         ]);
     }
 
     /** @test */
     public function baska_kullanicinin_grubu_silinebilir_sadece_yetkisi_varsa(): void
     {
-        $owner = User::factory()->create();
-        $owner->assignRole('admin');
-        $otherUser = User::factory()->create();
-        $otherUser->assignRole('admin');
+        $sahip = User::factory()->create();
+        $sahip->assignRole('admin');
+        $digerKullanici = User::factory()->create();
+        $digerKullanici->assignRole('admin');
 
-        $group = Group::factory()->create(['user_id' => $owner->id]);
+        $grup = Group::factory()->create(['user_id' => $sahip->id]);
 
-        $response = $this->actingAs($otherUser)
-            ->delete(route('groups.destroy', $group->id));
+        $yanit = $this->actingAs($digerKullanici)
+            ->delete(route('groups.destroy', $grup->id));
 
         // Policy kontrolü yapılıyor, bu test için beklenen davranışı kontrol et
         $this->assertDatabaseHas('groups', [
-            'id' => $group->id,
+            'id' => $grup->id,
         ]);
     }
 
     /** @test */
     public function grup_adi_guncellemede_zorunludur(): void
     {
-        $user = User::factory()->create();
-        $user->assignRole('admin');
-        $group = Group::factory()->create(['user_id' => $user->id]);
+        $kullanici = User::factory()->create();
+        $kullanici->assignRole('admin');
+        $grup = Group::factory()->create(['user_id' => $kullanici->id]);
 
-        $response = $this->actingAs($user)
-            ->put(route('groups.update', $group->id), [
+        $yanit = $this->actingAs($kullanici)
+            ->put(route('groups.update', $grup->id), [
                 'groups_name' => '',
-                'city_id' => $group->city_id,
-                'university_id' => $group->university_id,
-                'faculty_id' => $group->faculty_id,
-                'department_id' => $group->department_id,
-                'class_models_id' => $group->class_models_id,
+                'city_id' => $grup->city_id,
+                'university_id' => $grup->university_id,
+                'faculty_id' => $grup->faculty_id,
+                'department_id' => $grup->department_id,
+                'class_models_id' => $grup->class_models_id,
             ]);
 
-        $response->assertSessionHasErrors('groups_name');
+        $yanit->assertSessionHasErrors('groups_name');
     }
 }

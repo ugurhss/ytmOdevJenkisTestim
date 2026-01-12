@@ -10,90 +10,105 @@ class ProfileTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_profile_page_is_displayed(): void
+    /**
+     * Test: Profil sayfası görüntülenebilir.
+     */
+    public function test_profil_sayfasi_goruntulenebilir(): void
     {
-        $user = User::factory()->create();
+        $kullanici = User::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
+        $yanit = $this
+            ->actingAs($kullanici)
             ->get('/profile');
 
-        $response->assertOk();
+        $yanit->assertOk();
     }
 
-    public function test_profile_information_can_be_updated(): void
+    /**
+     * Test: Profil bilgileri güncellenebilir.
+     */
+    public function test_profil_bilgileri_guncellenebilir(): void
     {
-        $user = User::factory()->create();
+        $kullanici = User::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
+        $yanit = $this
+            ->actingAs($kullanici)
             ->patch('/profile', [
-                'name' => 'Test User',
+                'name' => 'Test Kullanıcı',
                 'email' => 'test@example.com',
             ]);
 
-        $response
+        $yanit
             ->assertSessionHasNoErrors()
             ->assertRedirect('/profile');
 
-        $user->refresh();
+        $kullanici->refresh();
 
-        $this->assertSame('Test User', $user->name);
-        $this->assertSame('test@example.com', $user->email);
-        $this->assertNull($user->email_verified_at);
+        $this->assertSame('Test Kullanıcı', $kullanici->name);
+        $this->assertSame('test@example.com', $kullanici->email);
+        $this->assertNull($kullanici->email_verified_at);
     }
 
-    public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
+    /**
+     * Test: E-posta adresi değişmediğinde doğrulama durumu değişmez.
+     */
+    public function test_eposta_adresi_degismediginde_dogrulama_durumu_degismez(): void
     {
-        $user = User::factory()->create();
+        $kullanici = User::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
+        $yanit = $this
+            ->actingAs($kullanici)
             ->patch('/profile', [
-                'name' => 'Test User',
-                'email' => $user->email,
+                'name' => 'Test Kullanıcı',
+                'email' => $kullanici->email,
             ]);
 
-        $response
+        $yanit
             ->assertSessionHasNoErrors()
             ->assertRedirect('/profile');
 
-        $this->assertNotNull($user->refresh()->email_verified_at);
+        $this->assertNotNull($kullanici->refresh()->email_verified_at);
     }
 
-    public function test_user_can_delete_their_account(): void
+    /**
+     * Test: Kullanıcı hesabını silebilir.
+     */
+    public function test_kullanici_hesabini_silebilir(): void
     {
-        $user = User::factory()->create();
+        $kullanici = User::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
+        $yanit = $this
+            ->actingAs($kullanici)
             ->delete('/profile', [
                 'password' => 'password',
             ]);
 
-        $response
+        $yanit
             ->assertSessionHasNoErrors()
             ->assertRedirect('/');
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+        $this->assertNull($kullanici->fresh());
     }
 
-    public function test_correct_password_must_be_provided_to_delete_account(): void
+    /**
+     * Test: Hesap silmek için doğru şifre girilmelidir.
+     */
+    public function test_hesap_silmek_icin_dogru_sifre_girilmelidir(): void
     {
-        $user = User::factory()->create();
+        $kullanici = User::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
+        $yanit = $this
+            ->actingAs($kullanici)
             ->from('/profile')
             ->delete('/profile', [
-                'password' => 'wrong-password',
+                'password' => 'yanlis-sifre',
             ]);
 
-        $response
+        $yanit
             ->assertSessionHasErrors('password')
             ->assertRedirect('/profile');
 
-        $this->assertNotNull($user->fresh());
+        $this->assertNotNull($kullanici->fresh());
     }
 }

@@ -12,17 +12,17 @@ class DashboardTest extends DuskTestCase
     use DatabaseMigrations;
 
     /**
-     * Test dashboard is accessible after login.
+     * Test: Giriş yaptıktan sonra dashboard erişilebilir.
      */
-    public function test_dashboard_is_accessible(): void
+    public function test_giris_yaptiktan_sonra_dashboard_erisilebilir(): void
     {
-        $user = User::factory()->create([
+        $kullanici = User::factory()->create([
             'email' => 'test@example.com',
             'password' => bcrypt('password'),
         ]);
 
-        $this->browse(function (Browser $browser) use ($user) {
-            $browser->loginAs($user)
+        $this->browse(function (Browser $tarayici) use ($kullanici) {
+            $tarayici->loginAs($kullanici)
                     ->visit('/dashboard')
                     ->assertPathIs('/dashboard')
                     ->assertSee('Dashboard');
@@ -30,12 +30,12 @@ class DashboardTest extends DuskTestCase
     }
 
     /**
-     * Test dashboard redirects to login when not authenticated.
+     * Test: Dashboard kimlik doğrulama gerektirir.
      */
-    public function test_dashboard_requires_authentication(): void
+    public function test_dashboard_kimlik_dogrulama_gerektirir(): void
     {
-        $this->browse(function (Browser $browser) {
-            $browser->visit('/dashboard')
+        $this->browse(function (Browser $tarayici) {
+            $tarayici->visit('/dashboard')
                     ->assertPathIs('/login');
         });
     }
