@@ -57,7 +57,7 @@ pipeline {
             -v ${JENKINS_VOL}:/var/jenkins_home \
             -w ${WS} \
             ${CI_IMAGE} \
-            sh -lc "pwd && ls -la && composer install --no-interaction --prefer-dist"
+            sh -lc "pwd && ls -la && composer update laravel/dusk --no-interaction --prefer-dist || composer install --no-interaction --prefer-dist"
         '''
       }
     }
