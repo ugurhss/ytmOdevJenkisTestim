@@ -51,27 +51,63 @@ RUN apt-get update && apt-get install -y \
     xvfb \
     && rm -rf /var/lib/apt/lists/*
 
-# Google Chrome kurulumu (modern yöntem - apt-key deprecated)
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
+# Chrome/Chromium kurulumu (mimariye göre)
+# ARM64 için Chromium, AMD64 için Google Chrome
+RUN ARCH=$(dpkg --print-architecture) \
+    && if [ "$ARCH" = "amd64" ]; then \
+        echo "Installing Google Chrome for amd64" \
+        && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+        && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+        && apt-get update \
+        && apt-get install -y google-chrome-stable \
+        && CHROME_BIN=google-chrome; \
+    else \
+        echo "Installing Chromium for $ARCH" \
+        && apt-get update \
+        && apt-get install -y chromium chromium-driver \
+        && CHROME_BIN=chromium; \
+    fi \
+    && ln -s /usr/bin/$CHROME_BIN /usr/bin/google-chrome \
     && rm -rf /var/lib/apt/lists/*
 
-# ChromeDriver kurulumu (Chrome for Testing ile uyumlu)
-RUN CHROME_VERSION=$(google-chrome --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1) \
-    && if [ -z "$CHROME_VERSION" ]; then CHROME_VERSION=131; fi \
-    && echo "Chrome major version: $CHROME_VERSION" \
-    && CHROMEDRIVER_VERSION=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}" 2>/dev/null || echo "") \
-    && if [ -z "$CHROMEDRIVER_VERSION" ]; then \
-        CHROMEDRIVER_VERSION=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE" 2>/dev/null | head -1 | tr -d '\n' || echo "131.0.6778.85"); \
-    fi \
-    && echo "ChromeDriver version: $CHROMEDRIVER_VERSION" \
-    && wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip" \
-    && unzip -q /tmp/chromedriver.zip -d /tmp/ \
-    && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
-    && chmod +x /usr/local/bin/chromedriver \
-    && rm -rf /tmp/chromedriver*
+# ChromeDriver kurulumu (mimariye göre)
+RUN ARCH=$(dpkg --print-architecture) \
+    && if [ "$ARCH" = "amd64" ]; then \
+        echo "Installing ChromeDriver for amd64" \
+        && CHROME_VERSION=$(google-chrome --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1 | cut -d. -f1) \
+        && if [ -z "$CHROME_VERSION" ]; then CHROME_VERSION=131; fi \
+        && echo "Chrome major version: $CHROME_VERSION" \
+        && CHROMEDRIVER_VERSION=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}" 2>/dev/null || echo "") \
+        && if [ -z "$CHROMEDRIVER_VERSION" ]; then \
+            CHROMEDRIVER_VERSION=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE" 2>/dev/null | head -1 | tr -d '\n' || echo "131.0.6778.85"); \
+        fi \
+        && echo "ChromeDriver version: $CHROMEDRIVER_VERSION" \
+        && wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip" \
+        && unzip -q /tmp/chromedriver.zip -d /tmp/ \
+        && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
+        && chmod +x /usr/local/bin/chromedriver \
+        && rm -rf /tmp/chromedriver*; \
+    else \
+        echo "Installing ChromeDriver for $ARCH" \
+        && CHROMEDRIVER_VERSION=$(curl -sS "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE" 2>/dev/null | head -1 | tr -d '\n' || echo "131.0.6778.85") \
+        && echo "ChromeDriver version: $CHROMEDRIVER_VERSION" \
+        && if [ "$ARCH" = "arm64" ]; then \
+            wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux-arm64/chromedriver-linux-arm64.zip" || \
+            (echo "ARM64 ChromeDriver not found, trying alternative..." \
+            && CHROMEDRIVER_VERSION="131.0.6778.85" \
+            && wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux-arm64/chromedriver-linux-arm64.zip"); \
+        else \
+            wget -O /tmp/chromedriver.zip "https://storage.googleapis.com/chrome-for-testing-public/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip"; \
+        fi \
+        && unzip -q /tmp/chromedriver.zip -d /tmp/ \
+        && find /tmp -name chromedriver -type f -executable -exec mv {} /usr/local/bin/chromedriver \; \
+        && if [ ! -f /usr/local/bin/chromedriver ]; then \
+            echo "ChromeDriver not found in zip, trying chromium-driver..." \
+            && ln -s /usr/bin/chromium-driver /usr/local/bin/chromedriver 2>/dev/null || true; \
+        fi \
+        && chmod +x /usr/local/bin/chromedriver \
+        && rm -rf /tmp/chromedriver*; \
+    fi
 
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
