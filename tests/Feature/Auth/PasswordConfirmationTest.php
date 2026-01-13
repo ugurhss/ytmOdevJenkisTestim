@@ -21,7 +21,7 @@ test('şifre doğrulanabilir', function () {
     $response->assertSessionHasNoErrors();
 });
 
-test('geçersiz şifre ile doğrulama yapılamaz', function () {
+test('geçersiz şifre ile ssasa doğrulama yapılamaz', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->post('/confirm-password', [
